@@ -168,6 +168,13 @@ try {
   t.check("double-slash matches request works", two.status === 200);
   t.check("double-slash gives the same candidate", JSON.stringify(await two.json()) === JSON.stringify(one));
   t.check("candidate is STAR-489", one.MediaContainer?.Metadata?.[0]?.ratingKey === "STAR-489");
+  t.check("candidate carries isAdult: true", one.MediaContainer?.Metadata?.[0]?.isAdult === true);
+  // PMS 1.43.5 omits includeAdult for a default library (setting off) and never sends 0, so the default-library
+  // match above (which passed) proves absence is served. An explicit 0 is filtered.
+  const prefs = (await call("GET", `/library/sections/${sectionId}/prefs`)).body?.MediaContainer?.Setting ?? [];
+  t.check("library used the default 'Include adult content' = off", prefs.find((x) => x.id === "includeAdultContent")?.value === false || prefs.find((x) => x.id === "includeAdultContent")?.value === "false" || prefs.find((x) => x.id === "includeAdultContent")?.value === 0);
+  const off = await (await fetch(providerLocal + "/library/metadata/matches", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ type: 1, filename: "STAR-489 Office overtime.mkv", includeAdult: 0 }) })).json();
+  t.check("explicit includeAdult=0 returns no candidates", off.MediaContainer?.size === 0);
   const extras = await fetch(providerLocal + "/library/metadata/STAR-489/extras");
   t.check("extras returns 200 with size 0", extras.status === 200 && (await extras.json()).MediaContainer?.size === 0);
 

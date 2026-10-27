@@ -211,3 +211,21 @@ test("definition, extras and unknown routes", async () => {
   assert.deepEqual(b.calls, { match: 0, title: 0, images: 0 });
   assert.throws(() => createProvider(b, { identifier: "tv.plex.agents.bad" }));
 });
+
+test("adult content: items carry isAdult; includeAdult 0 filters, absent or 1 does not (PMS omits it by default)", async () => {
+  const b = backend();
+  const p = createProvider(b);
+  const base = { type: 1, title: "STAR 489" };
+  for (const extra of [{}, { includeAdult: 1 }, { includeAdult: "1" }]) {
+    const m = (await (await post(p, "/library/metadata/matches", { ...base, ...extra })).json()).MediaContainer.Metadata;
+    assert.equal(m.length, 1, JSON.stringify(extra));
+    assert.equal(m[0].isAdult, true);
+  }
+  for (const v of [0, "0"]) {
+    const r = await post(p, "/library/metadata/matches", { ...base, includeAdult: v });
+    assert.equal(r.status, 200);
+    assert.equal((await r.json()).MediaContainer.size, 0);
+  }
+  const full = (await (await get(p, "/library/metadata/STAR-489")).json()).MediaContainer.Metadata[0];
+  assert.equal(full.isAdult, true);
+});

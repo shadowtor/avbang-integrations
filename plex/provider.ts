@@ -153,6 +153,8 @@ export function createProvider(backend: Backend, config: ProviderConfig = {}) {
       ...(t.releaseDate ? { originallyAvailableAt: t.releaseDate } : {}),
       ...(year(t.releaseDate) ? { year: year(t.releaseDate) } : {}),
       ...(t.studio ? { studio: t.studio.name } : {}),
+      // Plex Metadata Providers spec: explicit content must carry isAdult. Every AVBang title is adult.
+      isAdult: true,
     };
   }
 
@@ -209,6 +211,11 @@ export function createProvider(backend: Backend, config: ProviderConfig = {}) {
       q.year = y;
     }
     if (!q.filename && !q.title) return bad();
+    // Spec: includeAdult is 1/0 and explicit results are filtered unless 1. PMS omits the field when the
+    // library setting "Include adult content" is off (observed on 1.43.5: absent for default libraries,
+    // 1 once enabled; it never sends 0). Filtering on absence would hide every title in a default library,
+    // so only an explicit 0 is honoured. See 28.1-07-PROGRESS.md.
+    if (o.includeAdult === 0 || o.includeAdult === "0") return json(container(identifier));
     const res = await backend.match(q);
     let list = res?.matches ?? [];
     if (list.some((m) => m.confidence === "code")) list = list.filter((m) => m.confidence === "code");
