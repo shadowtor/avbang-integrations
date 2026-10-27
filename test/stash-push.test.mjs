@@ -325,7 +325,7 @@ describe("keys and options", () => {
 
   it("warns when the Stash key would travel over plain http to a non-local host", async () => {
     const w = basic();
-    w.fetch = async () => new Response("{}", { status: 500 });
+    w.fetch = async () => new Response("{}", { status: 401 });
     const r = await go(w, ["--stash-url", "http://nas.lan:9999"], { STASH_API_KEY: SKEY });
     assert.match(r.out, /warning: STASH_API_KEY is sent over plain http/);
     assert.ok(!r.out.includes(SKEY));
