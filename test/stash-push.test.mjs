@@ -323,6 +323,15 @@ describe("keys and options", () => {
     assert.ok(w2.stashHeaders.every((h) => !("ApiKey" in h)));
   });
 
+  it("warns when the Stash key would travel over plain http to a non-local host", async () => {
+    const w = basic();
+    w.fetch = async () => new Response("{}", { status: 500 });
+    const r = await go(w, ["--stash-url", "http://nas.lan:9999"], { STASH_API_KEY: SKEY });
+    assert.match(r.out, /warning: STASH_API_KEY is sent over plain http/);
+    assert.ok(!r.out.includes(SKEY));
+    assert.ok(!(await go(basic(), [], { STASH_API_KEY: SKEY })).out.includes("warning"));
+  });
+
   it("keys are not accepted as options and the value is never echoed", async () => {
     const r = await go(basic(), ["--api-key=" + KEY]);
     assert.equal(r.code, 2);

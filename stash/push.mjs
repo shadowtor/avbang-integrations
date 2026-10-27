@@ -144,6 +144,10 @@ export async function run({ argv, env = {}, fetch: doFetch = globalThis.fetch, l
     log(`push: ${clean(String(e.message).replaceAll(apiKey, "[key]"))}`);
     return 1;
   }
+  const su = new URL(o.stashUrl);
+  if (env.STASH_API_KEY && su.protocol === "http:" && !["localhost", "127.0.0.1", "[::1]"].includes(su.hostname)) {
+    log("push: warning: STASH_API_KEY is sent over plain http to a non-local host");
+  }
   const hosts = (env.AVBANG_IMAGE_HOSTS ?? "avbang.net").split(",").map((s) => s.trim()).filter(Boolean);
   const cache = new Map();
   const stats = { scenes: 0, matched: 0, updated: 0, unchanged: 0, skipped: {} };
