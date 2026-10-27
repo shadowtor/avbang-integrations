@@ -39,13 +39,18 @@ export async function bootStash({ files, scrapers = [] }) {
   await poll(async () => (await gql(`{ systemStatus { status } }`)).systemStatus?.status === "OK", { deadlineMs: 120_000, intervalMs: 1500 });
 
   run("docker", ["exec", c.name, "mkdir", "-p", "/data"]);
-  for (const f of files) {
-    const r = run("docker", ["exec", c.name, "ffmpeg", "-loglevel", "error", "-f", "lavfi", "-i", "color=c=black:s=64x64:d=1", "-y", `/data/${f}`]);
+  // distinct content per file: Stash folds files with identical fingerprints into one scene
+  for (const [i, f] of files.entries()) {
+    const colour = ["black", "red", "green", "blue", "yellow", "white", "cyan"][i % 7];
+    const r = run("docker", ["exec", c.name, "ffmpeg", "-loglevel", "error", "-f", "lavfi", "-i", `color=c=${colour}:s=${64 + 16 * i}x64:d=1`, "-y", `/data/${f}`]);
     if (r.code !== 0) throw new Error(`ffmpeg failed: ${r.out.slice(0, 300)}`);
   }
   await gql(`mutation { metadataScan(input:{}) }`);
   const ok = await poll(async () => (await gql(`{ findScenes { count } }`)).findScenes.count >= files.length, { deadlineMs: 180_000, intervalMs: 3000 });
-  if (!ok) throw new Error(`scan did not find ${files.length} scenes`);
+  if (!ok) {
+    const n = (await gql(`{ findScenes { count } }`)).findScenes.count;
+    throw new Error(`scan found ${n} of ${files.length} scenes; Stash log tail: ${c.logs().slice(-800)}`);
+  }
   return { container: c, url, gql, cfg };
 }
 
