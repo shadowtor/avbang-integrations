@@ -1,0 +1,22 @@
+# AVBang Plex provider for self-hosting. Run from the repository root:
+#   echo 'AVBANG_API_KEY=av_live_...' > .env   # a dedicated key, never committed
+#   docker compose -f plex/compose.example.yml up -d --build
+# Then register http://127.0.0.1:8787 as a metadata provider in Plex (see the guide).
+#
+# The container holds your API key and answers anyone who can reach its port.
+# The port is published on loopback only. Do not change it to a public address or 0.0.0.0.
+# If Plex runs on another machine, set PROVIDER_TOKEN and reach this host over your LAN or a VPN.
+services:
+  avbang-plex-provider:
+    build:
+      context: .
+      dockerfile: plex/Dockerfile
+    restart: unless-stopped
+    environment:
+      AVBANG_API_KEY: ${AVBANG_API_KEY:?set AVBANG_API_KEY in .env}
+      # PROVIDER_TOKEN: ${PROVIDER_TOKEN}   # 16-128 chars of A-Za-z0-9_-; register http://host:8787/<token>
+    ports:
+      - "127.0.0.1:8787:8787"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]

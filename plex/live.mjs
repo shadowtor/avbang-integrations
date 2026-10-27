@@ -1,21 +1,24 @@
 // Live Plex check (phase 28.1, D-08): boots a real, unclaimed Plex Media Server in Docker, the mock AVBang API
 // and the container-mode provider, then asserts what PMS stored for 'STAR-489 Office overtime.mkv'.
-//   node integrations/plex/live.mjs --mock
-// Real-API modes are added by plan 07.
+//   node integrations/plex/live.mjs --mock               provider run as a node process
+//   node integrations/plex/live.mjs --mock --container   provider run from the built plex/Dockerfile image
+// Real-API modes follow once the test key exists (plan 07).
 import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { randomBytes } from "node:crypto";
 import { startMock } from "../lib/mock-api.mjs";
 import {
-  HOST_FROM_CONTAINER, dockerHostArgs, freePort, poll, reporter, spawnNode, startContainer, throwawayKey, waitForHttp,
+  HOST_FROM_CONTAINER, dockerHostArgs, freePort, poll, reporter, run, spawnNode, startContainer, throwawayKey, waitForHttp,
 } from "../lib/harness.mjs";
 
 const PMS_IMAGE = "plexinc/pms-docker:1.43.5.11079-b3b13e506";
 const ID = "tv.plex.agents.custom.avbang.movie";
 
+const useContainer = process.argv.includes("--container");
 if (!process.argv.includes("--mock")) {
-  console.error("usage: node integrations/plex/live.mjs --mock");
+  console.error("usage: node integrations/plex/live.mjs --mock [--container]");
   process.exit(2);
 }
 
@@ -30,19 +33,40 @@ writeFileSync(join(dir2, "STAR-490 Night shift.mkv"), Buffer.alloc(4096, 0x1a));
 let pms;
 let mock;
 let server;
+let imageTag;
 try {
-  mock = await startMock({ apiKey: key, imageBase: HOST_FROM_CONTAINER });
+  mock = await startMock({ apiKey: key, imageBase: HOST_FROM_CONTAINER, ...(useContainer ? { apiBind: "0.0.0.0" } : {}) });
   const providerPort = await freePort();
-  server = spawnNode(["integrations/plex/server.ts"], {
+  const providerEnv = {
     AVBANG_API_KEY: key,
-    AVBANG_API_BASE: `${mock.apiOrigin}/v1`,
+    AVBANG_API_BASE: `${useContainer ? mock.apiOriginFromContainer : mock.apiOrigin}/v1`,
     AVBANG_ALLOW_INSECURE: "1",
     AVBANG_TEST_IMAGE_ORIGINS: mock.imageOrigin,
-    PORT: String(providerPort),
-    BIND: "0.0.0.0", // explicit: PMS runs in a container; the default is 127.0.0.1
     PROVIDER_TOKEN: token,
-    NODE_ENV: "development",
-  });
+    NODE_ENV: "development", // the image sets production, which refuses the test image origin; only this harness overrides it
+  };
+  if (useContainer) {
+    // Build context is the integrations/ directory, resolved from this file so it works from the monorepo and the split root.
+    const ctx = join(dirname(fileURLToPath(import.meta.url)), "..");
+    const tag = `avbang-plex-provider-test:${randomBytes(4).toString("hex")}`;
+    const built = run("docker", ["build", "-f", join(ctx, "plex", "Dockerfile"), "-t", tag, ctx], { timeoutMs: 300_000 });
+    t.check("image builds from the integrations/ context", built.code === 0, built.out.slice(-400));
+    if (built.code !== 0) throw new Error("image build failed");
+    imageTag = tag;
+    // The published port is for this harness: PMS reaches it through host.docker.internal.
+    const c = startContainer("avbang-plex-provider", tag, [
+      "-p", `${providerPort}:8787`,
+      ...Object.entries(providerEnv).flatMap(([k, v]) => ["-e", `${k}=${v}`]),
+      ...dockerHostArgs(),
+    ]);
+    server = { child: { kill: () => c.stop() }, output: () => c.logs() };
+  } else {
+    server = spawnNode(["integrations/plex/server.ts"], {
+      ...providerEnv,
+      PORT: String(providerPort),
+      BIND: "0.0.0.0", // explicit: PMS runs in a container; the default is 127.0.0.1
+    });
+  }
   const providerRoot = `http://127.0.0.1:${providerPort}`;
   const providerLocal = `${providerRoot}/${token}`;
   await waitForHttp(providerLocal + "/");
@@ -207,6 +231,7 @@ try {
 } finally {
   pms?.stop();
   server?.child.kill();
+  if (imageTag) run("docker", ["rmi", "-f", imageTag]);
   await mock?.close();
   rmSync(dir, { recursive: true, force: true });
   rmSync(dir2, { recursive: true, force: true });

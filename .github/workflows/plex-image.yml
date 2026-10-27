@@ -1,0 +1,31 @@
+name: plex-image
+
+# Builds the Plex provider image and pushes it to GHCR when a version tag is pushed.
+# GitHub reads workflows from the repository root, so this runs in the split repo only.
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Build and push
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          [[ "$TAG" =~ ^v[0-9A-Za-z._-]{1,60}$ ]] || { echo "unexpected tag"; exit 1; }
+          IMAGE="ghcr.io/${OWNER,,}/avbang-plex-provider"
+          echo "$GH_TOKEN" | docker login ghcr.io -u "$OWNER" --password-stdin
+          docker build -f plex/Dockerfile -t "$IMAGE:$TAG" -t "$IMAGE:latest" .
+          docker push "$IMAGE:$TAG"
+          docker push "$IMAGE:latest"
