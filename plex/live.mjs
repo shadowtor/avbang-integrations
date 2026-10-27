@@ -5,6 +5,7 @@
 import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { randomBytes } from "node:crypto";
 import { startMock } from "../lib/mock-api.mjs";
 import {
   HOST_FROM_CONTAINER, dockerHostArgs, freePort, poll, reporter, spawnNode, startContainer, throwawayKey, waitForHttp,
@@ -20,6 +21,7 @@ if (!process.argv.includes("--mock")) {
 
 const t = reporter();
 const key = throwawayKey();
+const token = randomBytes(16).toString("hex");
 const dir = mkdtempSync(join(tmpdir(), "avbang-plex-"));
 // non-empty: PMS skips 0-byte files
 writeFileSync(join(dir, "STAR-489 Office overtime.mkv"), Buffer.alloc(4096, 0x1a));
@@ -37,10 +39,12 @@ try {
     AVBANG_ALLOW_INSECURE: "1",
     AVBANG_TEST_IMAGE_ORIGINS: mock.imageOrigin,
     PORT: String(providerPort),
-    BIND: "0.0.0.0",
+    BIND: "0.0.0.0", // explicit: PMS runs in a container; the default is 127.0.0.1
+    PROVIDER_TOKEN: token,
     NODE_ENV: "development",
   });
-  const providerLocal = `http://127.0.0.1:${providerPort}`;
+  const providerRoot = `http://127.0.0.1:${providerPort}`;
+  const providerLocal = `${providerRoot}/${token}`;
   await waitForHttp(providerLocal + "/");
 
   const pmsPort = await freePort();
@@ -78,7 +82,7 @@ try {
   t.check("PMS version is 1.43.5.x", String(version).startsWith("1.43.5"), String(version));
 
   // register (no trailing slash), group, library
-  const uri = `http://${HOST_FROM_CONTAINER}:${providerPort}`;
+  const uri = `http://${HOST_FROM_CONTAINER}:${providerPort}/${token}`;
   await poll(async () => (await call("GET", "/library/sections")).status === 200, { deadlineMs: 120_000, intervalMs: 2000 });
   const reg = await call("POST", `/media/providers/metadata?uri=${encodeURIComponent(uri)}`);
   t.check("provider registered", reg.status === 200, `${reg.status} ${reg.text.slice(0, 200)}`);
@@ -174,6 +178,15 @@ try {
   t.check("PMS log never contains the key", !pms.logs().includes(key));
   t.check("foreign image origin never contacted", mock.foreignLog.length === 0);
   t.check("PMS fetched the image from the mock image origin", mock.imageLog.length > 0);
+
+  // shared secret: without the token segment the provider answers 404 and never calls the API
+  const before = mock.log.length;
+  const noTok = await fetch(providerRoot + "/library/metadata/STAR-489");
+  const badTok = await fetch(providerRoot + "/" + "0".repeat(32) + "/library/metadata/STAR-489");
+  t.check("request without the token is rejected", noTok.status === 404, String(noTok.status));
+  t.check("request with a wrong token is rejected", badTok.status === 404, String(badTok.status));
+  t.check("rejected requests never reached the API", mock.log.length === before);
+  t.check("token is never logged", !server.output().includes(token));
 
   // 429 -> 503 + Retry-After
   mock.expect429(1);

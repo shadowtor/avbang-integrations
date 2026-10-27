@@ -2,6 +2,13 @@
 // Run with node 24+ (types are stripped, no build):  node integrations/plex/server.ts
 // The API key lives only in the AVBANG_API_KEY environment variable. The URL you register in Plex
 // carries no secret. The key is never logged and never placed in a URL.
+//
+// Exposure: the server holds your API key and answers anyone who can reach its port, so it binds to
+// 127.0.0.1 by default. Inside a container set BIND=0.0.0.0 explicitly and publish the port on loopback
+// only (docker run -p 127.0.0.1:8787:8787 ...; compose: "127.0.0.1:8787:8787"). To expose it beyond that
+// (for example to a Plex on another host) set PROVIDER_TOKEN (16-128 chars of A-Za-z0-9_-) and register
+// http://host:8787/<token> in Plex; requests without the token as first path segment get 404.
+import { createHash, timingSafeEqual } from "node:crypto";
 import { createServer } from "node:http";
 import type { Server } from "node:http";
 import { createProvider, ProviderError } from "./provider.ts";
@@ -20,6 +27,7 @@ export type Config = {
   testImageOrigins: string[];
   port: number;
   bind: string;
+  providerToken: string | null;
 };
 
 const list = (v: string | undefined) =>
@@ -49,6 +57,10 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
   }
   const port = env.PORT === undefined || env.PORT === "" ? 8787 : Number(env.PORT);
   if (!Number.isInteger(port) || port < 0 || port > 65535) throw new ConfigError("PORT is invalid");
+  const providerToken = env.PROVIDER_TOKEN || null;
+  if (providerToken !== null && !/^[A-Za-z0-9_-]{16,128}$/.test(providerToken)) {
+    throw new ConfigError("PROVIDER_TOKEN must be 16-128 characters of A-Za-z0-9_-");
+  }
   const imageHosts = list(env.AVBANG_IMAGE_HOSTS);
   return {
     apiKey,
@@ -56,7 +68,8 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
     imageHosts: imageHosts.length ? imageHosts : ["avbang.net"],
     testImageOrigins,
     port,
-    bind: env.BIND || "0.0.0.0",
+    bind: env.BIND || "127.0.0.1",
+    providerToken,
   };
 }
 
@@ -131,6 +144,17 @@ export function httpBackend(config: Config, fetchImpl: Fetch = fetch): Backend {
   };
 }
 
+const digest = (v: string) => createHash("sha256").update(v).digest();
+const LOOPBACK = new Set(["127.0.0.1", "::1", "localhost"]);
+
+/** Constant-time check of the first path segment; returns the remaining path or null. */
+export function stripToken(path: string, token: string | null): string | null {
+  if (token === null) return path;
+  const m = /^\/([^/]*)(\/.*)?$/.exec(path);
+  if (!m || !timingSafeEqual(digest(m[1]), digest(token))) return null;
+  return m[2] ?? "/";
+}
+
 export type Deps = { fetch?: Fetch; log?: (line: string) => void };
 
 /** Resolves once listening. Logs only method, path and status. */
@@ -140,16 +164,26 @@ export function startServer(config: Config, deps: Deps = {}): Promise<{ server: 
     imageHosts: config.imageHosts,
     testImageOrigins: config.testImageOrigins,
   });
+  if (config.providerToken === null && !LOOPBACK.has(config.bind)) {
+    log(`warning: provider is unauthenticated and bound to ${config.bind}; anyone who can reach it can use your API key (set PROVIDER_TOKEN)`);
+  }
   const server = createServer((req, res) => {
-    const rawPath = (req.url ?? "/").split("?")[0];
+    const fullPath = (req.url ?? "/").split("?")[0];
+    // the token (when configured) is the first path segment and is never logged
+    const stripped = stripToken(fullPath, config.providerToken);
+    const rawPath = stripped ?? fullPath;
     const method = req.method ?? "GET";
-    const safePath = rawPath.replace(/[^\x21-\x7e]/g, "?").slice(0, 200);
+    const safePath = (stripped === null ? "/[unauthorized]" : rawPath).replace(/[^\x21-\x7e]/g, "?").slice(0, 200);
     const done = (status: number, body: string, headers: Record<string, string> = {}, close = false) => {
       if (res.headersSent) return;
       res.writeHead(status, { "content-type": "application/json", ...(close ? { connection: "close" } : {}), ...headers });
       res.end(body);
       log(`${method.replace(/[^A-Z]/g, "?").slice(0, 10)} ${safePath} ${status}`);
     };
+    if (stripped === null) {
+      req.resume();
+      return done(404, '{"MediaContainer":{"size":0}}', {}, true);
+    }
     const chunks: Buffer[] = [];
     let size = 0;
     let over = false;
