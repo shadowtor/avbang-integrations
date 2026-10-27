@@ -1,0 +1,62 @@
+# AVBang scraper for Stash (scrapeJson). Tested on Stash v0.31.1.
+#
+# Install: copy this file into the "scrapers" folder of your Stash configuration directory,
+# then in Stash go to Settings > Metadata Providers > Scrapers and reload scrapers.
+#
+# 1. Replace the fake key below (Authorization value) with your own AVBang API key.
+#    Use one dedicated key for Stash (an account holds five), so you can revoke it in
+#    Settings without touching your other tools.
+# 2. Stash has no secret store for scrapers: this file keeps the key in PLAINTEXT. Keep the
+#    file private and do not share it, post it or commit it anywhere.
+#
+# Limits of this scraper:
+# - Searching by name lists matches; picking one fetches the full record from its AVBang page address.
+# - Scene fragment scrape finds the code in the file name by pattern (STAR-489 style, with a
+#   hyphen). Names without a hyphen (STAR489) are not matched here; use push.mjs for those.
+# - The cover is the 640 px preview. Stash fetches and stores it itself, and Stash sends no
+#   Authorization header when it downloads an image, so the cover is blurred for explicit
+#   titles. push.mjs fetches the clear cover for keys that are entitled to it.
+name: AVBang
+sceneByName:
+  action: scrapeJson
+  queryURL: https://api.avbang.net/v1/search?q={}&type=titles
+  scraper: searchScraper
+sceneByQueryFragment:
+  action: scrapeJson
+  queryURL: https://api.avbang.net/v1/titles/{url}
+  queryURLReplace:
+    url:
+      - regex: '^.*/t/([A-Za-z0-9-]+)/?$'
+        with: '$1'
+  scraper: sceneScraper
+sceneByFragment:
+  action: scrapeJson
+  queryURL: https://api.avbang.net/v1/titles/{filename}
+  queryURLReplace:
+    filename:
+      - regex: '^.*?([A-Za-z0-9]{2,8}-[0-9]{2,5}).*$'
+        with: '$1'
+  scraper: sceneScraper
+jsonScrapers:
+  searchScraper:
+    scene:
+      Title: titles.#.title
+      URL: titles.#.url
+      Date: titles.#.releaseDate
+      Image: titles.#.cover
+      Code: titles.#.code
+  sceneScraper:
+    scene:
+      Title: title
+      Code: code
+      Details: synopsis
+      Date: releaseDate
+      URL: url
+      Image: cover
+      Studio: { Name: studio.name }
+      Performers: { Name: performers.#.name }
+      Tags: { Name: tags.#.name }
+driver:
+  headers:
+    - Key: Authorization
+      Value: Bearer av_live_xxxxxxxxxx
