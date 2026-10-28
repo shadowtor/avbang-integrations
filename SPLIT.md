@@ -26,14 +26,14 @@ node integrations/scripts/simulate-split.mjs
 Create the split branch locally and scan its whole history with gitleaks, run through Docker with a pinned tag. Never use `latest`.
 
 ```
-git subtree split --prefix=integrations -b split-preview
+git subtree split --prefix=integrations -b split-preview     # slow on a large history: minutes
 docker manifest inspect ghcr.io/gitleaks/gitleaks:v8.30.1
-git clone --bare . "$TMPDIR/split-scan.git" --branch split-preview --single-branch
-docker run --rm -v "$TMPDIR/split-scan.git:/repo" ghcr.io/gitleaks/gitleaks:v8.30.1 git /repo --redact --no-banner --verbose
+docker run --rm -v "$PWD:/repo:ro" -v "$PWD/integrations/.gitleaks.toml:/cfg.toml:ro" \
+  ghcr.io/gitleaks/gitleaks:v8.30.1 git /repo --log-opts=split-preview -c /cfg.toml --redact --no-banner
 git branch -D split-preview
 ```
 
-Zero findings are required. If gitleaks reports anything, rotate the secret first, then rewrite the history. Use a newer pinned tag if v8.30.1 is outdated, and confirm it with `docker manifest inspect`.
+`.gitleaks.toml` extends the default rules and allows only three fake constants used in unit tests. In Git Bash on Windows, prefix the `docker run` line with `MSYS_NO_PATHCONV=1`. Zero findings are required. If gitleaks reports anything, rotate the secret first, then rewrite the history. Use a newer pinned tag if v8.30.1 is outdated, and confirm it with `docker manifest inspect`.
 
 ## Creating the public repository (owner steps)
 

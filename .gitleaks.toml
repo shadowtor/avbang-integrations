@@ -1,0 +1,13 @@
+# Used by the pre-publication history scan (see SPLIT.md). Extends the default rules.
+# The three values below are fake constants in unit tests; nothing else is allowed.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "fake credentials used as unit test fixtures"
+regexTarget = "match"
+regexes = [
+  '''av_live_SECRETKEY123''',
+  '''tok_0123456789abcdefghij''',
+  '''stash-secret-key-456''',
+]
