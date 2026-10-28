@@ -26,7 +26,7 @@ sceneByQueryFragment:
   queryURL: https://api.avbang.net/v1/titles/{url}
   queryURLReplace:
     url:
-      - regex: '^.*/t/([A-Za-z0-9-]+)/?$'
+      - regex: '^.*/(?:titles|t)/([A-Za-z0-9-]+)/?$'
         with: '$1'
   scraper: sceneScraper
 sceneByFragment:
