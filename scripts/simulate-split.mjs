@@ -73,7 +73,7 @@ try {
     const out = sh(process.execPath, ["scripts/check-tree.mjs", ...(list ? ["--denylist", list, "--require-denylist"] : [])]);
     if (!/check-tree: PASS/.test(out)) throw new Error(out);
   });
-  step("node --test test/", () => sh(process.execPath, ["--test", "test/"]));
+  step("node --test test/*.test.mjs", () => sh(process.execPath, ["--test", "test/*.test.mjs"]));
 
   step("docker build -f plex/Dockerfile .", () => sh("docker", ["build", "-q", "-f", "plex/Dockerfile", "-t", image, "."]));
   step("start image, GET / answers the provider definition", () => {

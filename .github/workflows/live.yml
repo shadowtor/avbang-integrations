@@ -23,7 +23,7 @@ jobs:
           node-version: "24"
       - name: Unit tests and packaging check
         run: |
-          node --test test/
+          node --test "test/*.test.mjs"
           node scripts/check-tree.mjs
       - name: Plex provider against a real Plex Media Server (mock API)
         run: node plex/live.mjs --mock

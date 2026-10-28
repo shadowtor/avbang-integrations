@@ -8,7 +8,7 @@ There is one maintainer, so there is no separate governance document. Decisions 
 
 ## Releases
 
-1. Make sure `node --test test/`, `node scripts/check-tree.mjs` and the mock-mode harnesses pass on the default branch.
+1. Make sure `node --test "test/*.test.mjs"`, `node scripts/check-tree.mjs` and the mock-mode harnesses pass on the default branch.
 2. Tag the commit `vX.Y.Z` and push the tag. The `plex-image` workflow builds the Plex provider image and pushes it to GitHub Container Registry.
 3. Publish release notes: what changed, which server versions were tested.
 

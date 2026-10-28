@@ -22,7 +22,7 @@ Use the feature request form and describe what you are trying to do before how. 
 - Docker, for the live harnesses. They start real Plex, Jellyfin and Stash servers against a mock AVBang API. They need no key and do not contact AVBang.
 
 ```
-node --test test/
+node --test "test/*.test.mjs"
 node scripts/check-tree.mjs
 node plex/live.mjs --mock
 node stash/live-scrape.mjs --mock

@@ -55,7 +55,10 @@ function declaredContact(root, fail) {
 
 function workflowPaths(root, rel, text, fail) {
   const check = (p, line) => {
-    if (!existsSync(resolve(root, p))) fail("workflow-path", rel, line, `path does not exist under the root: ${p}`);
+    // a glob such as test/*.test.mjs is checked by its directory part
+    const bare = p.replace(/^["']|["']$/g, "");
+    const target = bare.includes("*") ? bare.slice(0, bare.indexOf("*")).replace(/[^/]*$/, "") || "." : bare;
+    if (!existsSync(resolve(root, target))) fail("workflow-path", rel, line, `path does not exist under the root: ${p}`);
   };
   text.split(/\r?\n/).forEach((raw, i) => {
     const line = raw.replace(/#.*$/, "");

@@ -95,7 +95,7 @@ For each video it writes `<video name>.nfo` beside the file, then Jellyfin reads
 ## Develop and test
 
 ```
-node --test test/
+node --test "test/*.test.mjs"
 node scripts/check-tree.mjs
 node plex/live.mjs --mock
 ```

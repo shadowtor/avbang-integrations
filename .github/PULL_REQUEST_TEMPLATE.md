@@ -6,7 +6,7 @@ Closes #
 
 ## Checklist
 
-- [ ] `node --test test/` passes
+- [ ] `node --test "test/*.test.mjs"` passes
 - [ ] The mock-mode harness for the adapter I touched passes (`node <adapter>/live*.mjs --mock`)
 - [ ] `node scripts/check-tree.mjs` passes
 - [ ] No API keys, tokens, private hostnames or addresses in code, tests, logs or the description
