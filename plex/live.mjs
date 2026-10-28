@@ -2,7 +2,8 @@
 // and the container-mode provider, then asserts what PMS stored for 'STAR-489 Office overtime.mkv'.
 //   node integrations/plex/live.mjs --mock               provider run as a node process
 //   node integrations/plex/live.mjs --mock --container   provider run from the built plex/Dockerfile image
-// Real-API modes follow once the test key exists (plan 07).
+//   node integrations/plex/live.mjs --real --hosted      PMS registered straight at https://api-test.avbang.net/v1/plex/{key}
+//   node integrations/plex/live.mjs --real --container   built image run with the test key against api-test (see live-real.mjs)
 import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
@@ -17,8 +18,17 @@ const PMS_IMAGE = "plexinc/pms-docker:1.43.5.11079-b3b13e506";
 const ID = "tv.plex.agents.custom.avbang.movie";
 
 const useContainer = process.argv.includes("--container");
+if (process.argv.includes("--real")) {
+  const mode = process.argv.includes("--hosted") ? "hosted" : useContainer ? "container" : null;
+  if (!mode) {
+    console.error("usage: node integrations/plex/live.mjs --real --hosted | --real --container");
+    process.exit(2);
+  }
+  await (await import("./live-real.mjs")).runReal(mode, PMS_IMAGE, ID);
+  process.exit(process.exitCode ?? 0);
+}
 if (!process.argv.includes("--mock")) {
-  console.error("usage: node integrations/plex/live.mjs --mock [--container]");
+  console.error("usage: node integrations/plex/live.mjs --mock [--container] | --real --hosted | --real --container");
   process.exit(2);
 }
 
