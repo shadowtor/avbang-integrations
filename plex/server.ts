@@ -1,5 +1,5 @@
 // AVBang Plex provider, self-host container entry (phase 28.1, D-01).
-// Run with node 24+ (types are stripped, no build):  node integrations/plex/server.ts
+// Run with node 24+ (types are stripped, no build):  node plex/server.ts
 // The API key lives only in the AVBANG_API_KEY environment variable. The URL you register in Plex
 // carries no secret. The key is never logged and never placed in a URL.
 //

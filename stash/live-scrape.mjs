@@ -1,6 +1,6 @@
 // Live check of integrations/stash/avbang.yml against a real Stash (phase 28.1, D-07/D-08).
-//   node integrations/stash/live-scrape.mjs --mock
-//   node integrations/stash/live-scrape.mjs --real   (plan 07: AVBANG_API_BASE default https://api-test.avbang.net/v1, key in AVBANG_TEST_KEY)
+//   node stash/live-scrape.mjs --mock
+//   node stash/live-scrape.mjs --real   (plan 07: AVBANG_API_BASE default https://api-test.avbang.net/v1, key in AVBANG_TEST_KEY)
 // The committed avbang.yml is never edited: a copy with the API base and a harness key goes into a temp Stash config dir.
 // In scraper mode Stash itself fetches the cover URL, so no test-origin option is involved.
 import { readFileSync } from "node:fs";
@@ -13,7 +13,7 @@ import { bootStash, sceneIdsByName } from "./lib/live-common.mjs";
 
 const real = process.argv.includes("--real");
 if (!real && !process.argv.includes("--mock")) {
-  console.error("usage: node integrations/stash/live-scrape.mjs --mock | --real");
+  console.error("usage: node stash/live-scrape.mjs --mock | --real");
   process.exit(2);
 }
 const t = reporter();

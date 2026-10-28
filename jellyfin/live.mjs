@@ -1,6 +1,6 @@
 // Live Jellyfin check (phase 28.1, D-08): the NFO generator writes files, a real Jellyfin server in Docker reads them.
-//   node integrations/jellyfin/live.mjs --mock [--version 12.4|10.11|all]
-//   node integrations/jellyfin/live.mjs --real            (12.4 only; AVBANG_TEST_KEY, AVBANG_API_BASE default api-test)
+//   node jellyfin/live.mjs --mock [--version 12.4|10.11|all]
+//   node jellyfin/live.mjs --real            (12.4 only; AVBANG_TEST_KEY, AVBANG_API_BASE default api-test)
 // Mock mode uses the plan 01 mock API and a throwaway key; it never contacts the real API.
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
@@ -18,7 +18,7 @@ const real = args.includes("--real");
 const vi = args.indexOf("--version");
 const want = vi >= 0 ? args[vi + 1] : "all";
 if ((!real && !args.includes("--mock")) || (want !== "all" && !VERSIONS[want])) {
-  console.error("usage: node integrations/jellyfin/live.mjs --mock [--version 12.4|10.11|all] | --real");
+  console.error("usage: node jellyfin/live.mjs --mock [--version 12.4|10.11|all] | --real");
   process.exit(2);
 }
 const versions = real ? ["12.4"] : want === "all" ? Object.keys(VERSIONS) : [want];

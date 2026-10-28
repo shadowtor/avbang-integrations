@@ -1,9 +1,9 @@
 // Live Plex check (phase 28.1, D-08): boots a real, unclaimed Plex Media Server in Docker, the mock AVBang API
 // and the container-mode provider, then asserts what PMS stored for 'STAR-489 Office overtime.mkv'.
-//   node integrations/plex/live.mjs --mock               provider run as a node process
-//   node integrations/plex/live.mjs --mock --container   provider run from the built plex/Dockerfile image
-//   node integrations/plex/live.mjs --real --hosted      PMS registered straight at https://api-test.avbang.net/v1/plex/{key}
-//   node integrations/plex/live.mjs --real --container   built image run with the test key against api-test (see live-real.mjs)
+//   node plex/live.mjs --mock               provider run as a node process
+//   node plex/live.mjs --mock --container   provider run from the built plex/Dockerfile image
+//   node plex/live.mjs --real --hosted      PMS registered straight at https://api-test.avbang.net/v1/plex/{key}
+//   node plex/live.mjs --real --container   built image run with the test key against api-test (see live-real.mjs)
 import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
@@ -21,14 +21,14 @@ const useContainer = process.argv.includes("--container");
 if (process.argv.includes("--real")) {
   const mode = process.argv.includes("--hosted") ? "hosted" : useContainer ? "container" : null;
   if (!mode) {
-    console.error("usage: node integrations/plex/live.mjs --real --hosted | --real --container");
+    console.error("usage: node plex/live.mjs --real --hosted | --real --container");
     process.exit(2);
   }
   await (await import("./live-real.mjs")).runReal(mode, PMS_IMAGE, ID);
   process.exit(process.exitCode ?? 0);
 }
 if (!process.argv.includes("--mock")) {
-  console.error("usage: node integrations/plex/live.mjs --mock [--container] | --real --hosted | --real --container");
+  console.error("usage: node plex/live.mjs --mock [--container] | --real --hosted | --real --container");
   process.exit(2);
 }
 
@@ -71,7 +71,7 @@ try {
     ]);
     server = { child: { kill: () => c.stop() }, output: () => c.logs() };
   } else {
-    server = spawnNode(["integrations/plex/server.ts"], {
+    server = spawnNode([join(dirname(fileURLToPath(import.meta.url)), "server.ts")], {
       ...providerEnv,
       PORT: String(providerPort),
       BIND: "0.0.0.0", // explicit: PMS runs in a container; the default is 127.0.0.1

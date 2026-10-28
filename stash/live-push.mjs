@@ -1,6 +1,6 @@
 // Live check of integrations/stash/push.mjs against a real Stash (phase 28.1, D-07/D-08).
-//   node integrations/stash/live-push.mjs --mock
-//   node integrations/stash/live-push.mjs --real   (plan 07: AVBANG_API_BASE default https://api-test.avbang.net/v1, key in AVBANG_TEST_KEY)
+//   node stash/live-push.mjs --mock
+//   node stash/live-push.mjs --real   (plan 07: AVBANG_API_BASE default https://api-test.avbang.net/v1, key in AVBANG_TEST_KEY)
 // Mock mode uses only the plan 01 fixtures. The push tool runs on the host, so the mock image URLs name 127.0.0.1 and
 // the tool reaches them through the exact-origin test option (AVBANG_TEST_IMAGE_ORIGINS with AVBANG_ALLOW_INSECURE=1).
 import { createHash } from "node:crypto";
@@ -13,7 +13,7 @@ import { bootStash } from "./lib/live-common.mjs";
 
 const real = process.argv.includes("--real");
 if (!real && !process.argv.includes("--mock")) {
-  console.error("usage: node integrations/stash/live-push.mjs --mock | --real");
+  console.error("usage: node stash/live-push.mjs --mock | --real");
   process.exit(2);
 }
 const PUSH = fileURLToPath(new URL("./push.mjs", import.meta.url));

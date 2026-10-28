@@ -1,5 +1,5 @@
 // Real-API smoke runner (phase 28.1 plan 07, D-08): every adapter in --real mode against the deployed test API.
-//   node integrations/smoke.mjs
+//   node smoke.mjs
 // The key comes from loadSecret('AVBANG_TEST_KEY') (environment or the gitignored .infra file). It is exported only to
 // the child scripts' environment, and all output is passed through a redactor. Exit code 1 if any row fails.
 import { spawn } from "node:child_process";
