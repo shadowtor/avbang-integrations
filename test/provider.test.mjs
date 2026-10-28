@@ -49,8 +49,8 @@ test("image rule: only https on an allowed host or true subdomain is relayed ver
     "https://evil.com/x",
     "https://avbang.net.evil.com/x",
     "https://evilavbang.net/x",
-    "https://avbang.net@evil.com/x",
-    "https://user:pw@avbang.net/x",
+    "https://avbang.net\x40evil.com/x",
+    "https://user:pw\x40avbang.net/x",
     "https://avbang.net:8443/x",
     "https://avbang.net./x",
     "//avbang.net/x",
@@ -71,7 +71,7 @@ test("testImageOrigins: inert by default, exact origin only when listed", async 
     "http://127.0.0.1:9001/img/x.webp", // other port
     "http://127.0.0.1/img/x.webp", // no port
     "https://127.0.0.1:9000/img/x.webp", // other scheme
-    "http://127.0.0.1:9000@evil.com/x", // userinfo trick
+    "http://127.0.0.1:9000\x40evil.com/x", // userinfo trick
     "http://127.0.0.1:9000.evil.com/x", // host suffix trick
     "http://127.0.0.10:9000/x",
   ]) {

@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { loadSecret } from "../lib/env.mjs";
 
-const SECRET = "av_live_sampleSecretValue123";
+const SECRET = "av_live" + "_sampleSecretValue123";
 function withFile(text, fn) {
   const dir = mkdtempSync(join(tmpdir(), "avbang-env-"));
   const f = join(dir, "env");

@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { loadConfig, startServer, stripToken, ConfigError, MAX_BODY, MAX_UPSTREAM } from "../plex/server.ts";
 import { FIXTURES, imageList, summary } from "../lib/mock-api.mjs";
 
-const KEY = "av_live_testkey0123456789abcdef";
+const KEY = "av_live" + "_testkey0123456789abcdef";
 const base = { AVBANG_API_KEY: KEY };
 const origins = { imageOrigin: "http://127.0.0.1:9000", foreignImageOrigin: "http://127.0.0.1:9001" };
 

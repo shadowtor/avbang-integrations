@@ -1,0 +1,24 @@
+name: Feature request
+description: Suggest an improvement to an existing adapter, or a new adapter for the AVBang public API.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This repo holds adapters for the AVBang public API only. Stash-box endpoints and changes to AVBang itself are out of scope.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like the adapter to do?
+    validations:
+      required: true
+  - type: input
+    id: server
+    attributes:
+      label: Media server and version, if relevant

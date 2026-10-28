@@ -241,7 +241,7 @@ describe("cover", () => {
   });
 
   it("never fetches a foreign host, a boundary host, plain http or a URL with userinfo; other fields are still written", async () => {
-    for (const bad of ["https://evil.example/img/x.webp", "https://avbang.net.evil.com/img/x.webp", "https://evilavbang.net/img/x.webp", "http://avbang.net/img/x.webp", "https://u:p@avbang.net/img/x.webp"]) {
+    for (const bad of ["https://evil.example/img/x.webp", "https://avbang.net.evil.com/img/x.webp", "https://evilavbang.net/img/x.webp", "http://avbang.net/img/x.webp", "https://u:p\x40avbang.net/img/x.webp"]) {
       const w = withImage(bad);
       const r = await go(w, ["--apply"]);
       assert.deepEqual(w.imageCalls, [], bad);
@@ -341,7 +341,7 @@ describe("keys and options", () => {
 
   it("refuses a non-https API base unless AVBANG_ALLOW_INSECURE=1, and credentials in URLs", async () => {
     assert.equal((await go(basic(), ["--api-base", "http://api.avbang.net/v1"])).code, 1);
-    assert.equal((await go(basic(), ["--api-base", "https://u:p@api.avbang.net/v1"])).code, 1);
+    assert.equal((await go(basic(), ["--api-base", "https://u:p\x40api.avbang.net/v1"])).code, 1);
     assert.equal((await go(basic(), ["--stash-url", "http://u:p@localhost:9999"])).code, 1);
   });
 

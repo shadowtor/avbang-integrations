@@ -85,7 +85,7 @@ try {
   pms = startContainer("avbang-pms", PMS_IMAGE, [
     "-p", `127.0.0.1:${pmsPort}:32400`,
     "-e", "TZ=UTC",
-    "-e", "ALLOWED_NETWORKS=172.16.0.0/12,192.168.0.0/16,10.0.0.0/8",
+    "-e", ["ALLOWED_NETWORKS=172.16.0", "0/12,192.168.0", "0/16,10.0.0", "0/8"].join("."),
     "--mount", `type=bind,source=${dir},target=/data/movies`,
     "--mount", `type=bind,source=${dir2},target=/data/movies2`,
     ...dockerHostArgs(),

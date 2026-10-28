@@ -1,0 +1,46 @@
+name: Bug report
+description: An adapter does not behave as documented.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Never paste an API key. Redact keys, hostnames and file paths from logs before posting.
+        Security problems go through the private route in SECURITY.md, not here.
+  - type: dropdown
+    id: adapter
+    attributes:
+      label: Adapter
+      options:
+        - Plex provider (container)
+        - Plex provider (hosted URL)
+        - Stash scraper
+        - Stash push tool
+        - Jellyfin NFO generator
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: adapter-version
+    attributes:
+      label: Adapter version or commit
+    validations:
+      required: true
+  - type: input
+    id: server-version
+    attributes:
+      label: Media server and version
+      description: For example Plex Media Server, Jellyfin or Stash with the exact version.
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened, and what you expected
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Redacted logs
+      render: text

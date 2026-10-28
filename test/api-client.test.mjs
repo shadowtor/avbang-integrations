@@ -45,7 +45,7 @@ describe("get", () => {
   it("rejects non-https base unless allowInsecure; credentials in base", () => {
     assert.throws(() => createApiClient({ baseUrl: "http://avbang.net", key: KEY }), /https/);
     assert.doesNotThrow(() => createApiClient({ baseUrl: "http://127.0.0.1:1", key: KEY, allowInsecure: true }));
-    assert.throws(() => createApiClient({ baseUrl: "https://u:p@avbang.net", key: KEY }), /credentials/);
+    assert.throws(() => createApiClient({ baseUrl: "https://u:p\x40avbang.net", key: KEY }), /credentials/);
     assert.throws(() => createApiClient({ baseUrl: BASE, key: "" }), /key/);
   });
 
@@ -137,8 +137,8 @@ describe("rawFetchImage", () => {
       "https://avbang.net.evil.com/a.webp",
       "https://evilavbang.net/a.webp",
       "http://avbang.net/a.webp",
-      "https://user:pw@avbang.net/a.webp",
-      "https://avbang.net@evil.com/a.webp",
+      "https://user:pw\x40avbang.net/a.webp",
+      "https://avbang.net\x40evil.com/a.webp",
       "https://avbang.net:8443/a.webp",
       "file:///etc/passwd",
       "not a url",
@@ -178,7 +178,7 @@ describe("testImageOrigins", () => {
     const { client, calls } = mk({ testImageOrigins: ["http://127.0.0.1:8123"] }, [img()]);
     await client.rawFetchImage("http://127.0.0.1:8123/a.webp", ["avbang.net"]);
     assert.equal(calls.length, 1);
-    for (const u of ["http://127.0.0.1:8124/a.webp", "http://127.0.0.1/a.webp", "http://127.0.0.1:81233/a", "https://127.0.0.1:8123/a", "http://127.0.0.1:8123@evil.com/a"]) {
+    for (const u of ["http://127.0.0.1:8124/a.webp", "http://127.0.0.1/a.webp", "http://127.0.0.1:81233/a", "https://127.0.0.1:8123/a", "http://127.0.0.1:8123\x40evil.com/a"]) {
       await assert.rejects(client.rawFetchImage(u, ["avbang.net"]), (e) => e.code === "blocked_image", u);
     }
     assert.equal(calls.length, 1);

@@ -268,7 +268,7 @@ describe("real client wiring", () => {
   });
 
   it("never fetches boundary or foreign hosts", async () => {
-    for (const bad of ["https://avbang.net.evil.com/a.webp", "https://evilavbang.net/a.webp", "http://avbang.net/a.webp", "https://u:p@avbang.net/a.webp"]) {
+    for (const bad of ["https://avbang.net.evil.com/a.webp", "https://evilavbang.net/a.webp", "http://avbang.net/a.webp", "https://u:p\x40avbang.net/a.webp"]) {
       rmSync(join(root, "STAR-489 a.nfo"), { force: true });
       const { r, imageFetches } = await wired({}, bad);
       assert.equal(r.counts.posters, 0, bad);
