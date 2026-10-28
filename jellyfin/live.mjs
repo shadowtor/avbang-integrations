@@ -3,7 +3,7 @@
 //   node jellyfin/live.mjs --real            (12.4 only; AVBANG_TEST_KEY, AVBANG_API_BASE default api-test)
 // Mock mode uses the plan 01 mock API and a throwaway key; it never contacts the real API.
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";

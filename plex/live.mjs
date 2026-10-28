@@ -4,7 +4,7 @@
 //   node plex/live.mjs --mock --container   provider run from the built plex/Dockerfile image
 //   node plex/live.mjs --real --hosted      PMS registered straight at https://api-test.avbang.net/v1/plex/{key}
 //   node plex/live.mjs --real --container   built image run with the test key against api-test (see live-real.mjs)
-import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
+import { chmodSync, mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -35,11 +35,14 @@ if (!process.argv.includes("--mock")) {
 const t = reporter();
 const key = throwawayKey();
 const token = randomBytes(16).toString("hex");
+// mkdtemp makes 0700; the PMS container user is another uid on Linux runners and must be able to read the media
 const dir = mkdtempSync(join(tmpdir(), "avbang-plex-"));
+chmodSync(dir, 0o755);
 // non-empty: PMS skips 0-byte files
-writeFileSync(join(dir, "STAR-489 Office overtime.mkv"), Buffer.alloc(4096, 0x1a));
+writeFileSync(join(dir, "STAR-489 Office overtime.mkv"), Buffer.alloc(4096, 0x1a), { mode: 0o644 });
 const dir2 = mkdtempSync(join(tmpdir(), "avbang-plex2-"));
-writeFileSync(join(dir2, "STAR-490 Night shift.mkv"), Buffer.alloc(4096, 0x1a));
+chmodSync(dir2, 0o755);
+writeFileSync(join(dir2, "STAR-490 Night shift.mkv"), Buffer.alloc(4096, 0x1a), { mode: 0o644 });
 let pms;
 let mock;
 let server;
