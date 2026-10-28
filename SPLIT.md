@@ -33,7 +33,7 @@ docker run --rm -v "$PWD:/repo:ro" -v "$PWD/integrations/.gitleaks.toml:/cfg.tom
 git branch -D split-preview
 ```
 
-`.gitleaks.toml` extends the default rules and allows only three fake constants used in unit tests. In Git Bash on Windows, prefix the `docker run` line with `MSYS_NO_PATHCONV=1`. Zero findings are required. If gitleaks reports anything, rotate the secret first, then rewrite the history. Use a newer pinned tag if v8.30.1 is outdated, and confirm it with `docker manifest inspect`.
+`.gitleaks.toml` extends the default rules and allows only four fake constants used in unit tests. In Git Bash on Windows, prefix the `docker run` line with `MSYS_NO_PATHCONV=1`. Zero findings are required. If gitleaks reports anything, rotate the secret first, then rewrite the history. Use a newer pinned tag if v8.30.1 is outdated, and confirm it with `docker manifest inspect`.
 
 ## Creating the public repository (owner steps)
 
